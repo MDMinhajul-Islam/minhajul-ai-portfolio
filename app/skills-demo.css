@@ -23,3 +23,10 @@
 @keyframes pixelray{from{transform:translate(-18px,12px) scale(.4);opacity:.2}to{transform:translate(22px,-8px) scale(1.3);opacity:1}}@keyframes rebuild{0%,20%{opacity:0;transform:scale(.5)}45%,82%{opacity:1;transform:scale(1)}100%{opacity:0}}@keyframes scanrotate{to{transform:rotate(360deg)}}@keyframes messagein{from{opacity:0;transform:translateY(8px)}}@keyframes listening{0%{transform:scale(.65);opacity:1}100%{transform:scale(1.45);opacity:0}}
 @media(max-width:900px){.demo-browser{height:650px}.demo-tabs{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:620px){.project-card{min-height:555px}.demo-browser{height:600px;min-height:600px}.inpaint-scene{gap:.6rem;padding:1rem}.before-pane,.after-pane{width:37%}.reconstruction-field{width:18%}.reconstruction-field>span{display:none}.agent-flow{flex-direction:row;flex-wrap:wrap;gap:.3rem;margin:1rem 0}.agent-flow i{width:14px;height:1px}.agent-outcome{display:none}.mindcare-scene,.mri-scene{flex-direction:column}.listener{width:100%}.avatar-rings{width:110px}.mind-chat{width:100%}.mind-chat>p{font-size:.85rem}.response-options span{font-size:.52rem}.demo-tabs{grid-template-columns:1fr 1fr}}
+
+@media(min-width:1500px){
+  .skills-section,.demo-section{padding-inline:max(8vw,calc((100vw - 1640px)/2));padding-block:7rem}
+  .demo-heading{grid-template-columns:180px minmax(520px,640px) minmax(300px,420px);justify-content:space-between;gap:clamp(2.5rem,4vw,5rem)}
+  .skills-intro h2,.demo-heading h2{font-size:5.4rem}
+  .demo-browser{height:650px}
+}
