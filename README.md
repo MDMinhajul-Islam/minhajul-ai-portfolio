@@ -127,8 +127,6 @@ pnpm lint      # Check the source with Oxlint
 pnpm format    # Format the project with Oxfmt
 ```
 
-## Updating the portfolio
-
 ## Cloudflare Pages deployment
 
 The GitHub repository is connected to Cloudflare Pages. Pushing to `main` automatically builds and publishes the production website.
