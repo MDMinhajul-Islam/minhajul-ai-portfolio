@@ -2,7 +2,9 @@
 
 An interactive portfolio built to present my work across AI engineering, computer vision, machine learning, deep learning, applied research, and software engineering.
 
-**Live website:** [minhajul-ai-portfolio.alltasksolver.chatgpt.site](https://minhajul-ai-portfolio.alltasksolver.chatgpt.site/)
+**Live website:** [minhajul-ai-portfolio.pages.dev](https://minhajul-ai-portfolio.pages.dev/)
+
+The public portfolio is independently hosted on Cloudflare Pages. The original [OpenAI Sites deployment](https://minhajul-ai-portfolio.alltasksolver.chatgpt.site/) remains available as a backup.
 
 ## Why I built it
 
@@ -73,7 +75,7 @@ The contact form submits messages through FormSubmit's AJAX endpoint and include
 | 3D visual | Custom Canvas 2D projection and pointer interaction |
 | Icons | Lucide React |
 | Fonts | Geist, Geist Mono, and Instrument Serif |
-| Hosting | OpenAI Sites on a Cloudflare Workers-compatible runtime |
+| Hosting | Cloudflare Pages static export; original OpenAI Sites deployment retained |
 | Contact | FormSubmit AJAX endpoint with `mailto:` fallback |
 | Package manager | pnpm |
 
@@ -123,6 +125,34 @@ pnpm build     # Create the production build
 pnpm start     # Run the built Cloudflare Worker locally
 pnpm lint      # Check the source with Oxlint
 pnpm format    # Format the project with Oxfmt
+```
+
+## Updating the portfolio
+
+## Cloudflare Pages deployment
+
+The GitHub repository is connected to Cloudflare Pages. Pushing to `main` automatically builds and publishes the production website.
+
+| Setting | Value |
+| --- | --- |
+| Project | `minhajul-ai-portfolio` |
+| Production branch | `main` |
+| Framework preset | None (custom Vinext build) |
+| Build command | `pnpm run build` |
+| Build output directory | `dist/client` |
+| Environment variable | `CLOUDFLARE_PAGES=1` |
+| Node version | `NODE_VERSION=22.16.0` |
+
+When `CLOUDFLARE_PAGES=1`, `next.config.ts` enables `output: 'export'` and `vite.config.ts` omits the server-only hosting plugins. Vinext pre-renders the page and copies the JavaScript, CSS, fonts, and portrait into `dist/client`. The browser animations and third-party contact form still work; no Worker or database is needed for the public portfolio.
+
+Without that variable, the original Sites/Worker build is preserved. GitHub changes update Cloudflare Pages automatically, but do not automatically republish the original OpenAI Sites deployment.
+
+To test a Pages export in PowerShell:
+
+```powershell
+$env:CLOUDFLARE_PAGES = '1'
+pnpm run build
+Remove-Item Env:CLOUDFLARE_PAGES
 ```
 
 ## Updating the portfolio
