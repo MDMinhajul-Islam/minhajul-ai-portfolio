@@ -30,7 +30,7 @@ The skill matrix begins at zero when it enters the viewport. An `IntersectionObs
 
 ### Evidence-focused project cards
 
-The selected-work section presents eight GitHub projects as short engineering case studies. Each card explains the problem, the system built, the technical evidence, and the core stack. Pointer-responsive perspective transforms add depth without hiding the project information.
+The selected-work section presents nine GitHub projects as short engineering case studies. Each card explains the problem, the system built, the technical evidence, and the core stack. Pointer-responsive perspective transforms add depth without hiding the project information.
 
 Featured work includes:
 
@@ -41,7 +41,8 @@ Featured work includes:
 - MRI Tumor Classifier — multiclass brain-tumor classification;
 - Chat-Wave — real-time browser communication;
 - Northstar Voice Agent — a tool-using automotive voice agent; and
-- Automatic Toll System — full-stack workflow automation.
+- Automatic Toll System — full-stack workflow automation; and
+- NexGen Lifestyle — an AI-assisted retail storefront and secure commerce tool gateway.
 
 ### Synthetic live demonstrations
 
