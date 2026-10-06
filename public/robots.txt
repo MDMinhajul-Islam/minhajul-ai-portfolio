@@ -4,4 +4,4 @@ Allow: /
 User-agent: LinkedInBot
 Allow: /
 
-Sitemap: https://minhajul-ai-portfolio.pages.dev/sitemap.xml
+Sitemap: https://md-minhajul-portfolio.netlify.app/sitemap.xml

@@ -2,9 +2,9 @@
 
 An interactive portfolio built to present my work across AI engineering, computer vision, machine learning, deep learning, applied research, and software engineering.
 
-**Live website:** [minhajul-ai-portfolio.pages.dev](https://minhajul-ai-portfolio.pages.dev/)
+**Live website:** [md-minhajul-portfolio.netlify.app](https://md-minhajul-portfolio.netlify.app/)
 
-The public portfolio is independently hosted on Cloudflare Pages. The original [OpenAI Sites deployment](https://minhajul-ai-portfolio.alltasksolver.chatgpt.site/) remains available as a backup.
+The public portfolio is hosted on Netlify. The original [OpenAI Sites deployment](https://minhajul-ai-portfolio.alltasksolver.chatgpt.site/) remains available as a backup.
 
 ## Why I built it
 

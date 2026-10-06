@@ -5,7 +5,7 @@ const geist = Geist({ variable: '--font-geist', subsets: ['latin'] });
 const mono = Geist_Mono({ variable: '--font-mono', subsets: ['latin'] });
 const serif = Instrument_Serif({ variable: '--font-serif', subsets: ['latin'], weight: '400' });
 
-const siteUrl = 'https://minhajul-ai-portfolio.pages.dev/';
+const siteUrl = 'https://md-minhajul-portfolio.netlify.app/';
 const previewImageUrl = `${siteUrl}og-image.png`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
