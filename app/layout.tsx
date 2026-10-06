@@ -8,7 +8,7 @@ const serif = Instrument_Serif({ variable: '--font-serif', subsets: ['latin'], w
 
 const siteUrl = 'https://minhajul-ai-portfolio.pages.dev';
 const canonicalUrl = `${siteUrl}/`;
-const previewImageUrl = `${siteUrl}/minhajul-professional-v2.png`;
+const previewImageUrl = `${siteUrl}/og-image.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -30,8 +30,8 @@ export const metadata: Metadata = {
         url: previewImageUrl,
         secureUrl: previewImageUrl,
         type: 'image/png',
-        width: 1086,
-        height: 1448,
+        width: 1200,
+        height: 630,
         alt: 'Md. Minhajul Islam - AI Engineer & Researcher',
       },
     ],
