@@ -1,7 +1,8 @@
 'use client';
 
+/* oxlint-disable next/no-img-element -- Static export keeps the portfolio portrait as a public asset. */
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUpRight, Atom, BrainCircuit, Code2, Contact, GitFork, Mail, Microscope, MousePointer2 } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Atom, BrainCircuit, Code2, Contact, GitFork, Mail, Menu, Microscope, MousePointer2, X } from 'lucide-react';
 
 const links = {
   github: 'https://github.com/MDMinhajul-Islam',
@@ -9,6 +10,93 @@ const links = {
   scholar: 'https://scholar.google.com/citations?user=6482WSIAAAAJ&hl=en&authuser=1',
   email: 'mailto:mdminhajul.islam1823@gmail.com',
 };
+
+const navigation = [
+  ['top', 'Home'],
+  ['skills', 'Toolkit'],
+  ['work', 'Work'],
+  ['demos', 'Demos'],
+  ['research', 'Research'],
+  ['career', 'Career'],
+  ['about', 'About'],
+  ['contact', 'Contact'],
+] as const;
+
+function SiteNavigation() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('top');
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobilePanelRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const sections = navigation
+      .map(([id]) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target.id) setActiveSection(visible.target.id);
+      },
+      { rootMargin: '-22% 0px -58% 0px', threshold: [0, 0.15, 0.4] },
+    );
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const main = document.querySelector('main');
+    const footer = document.querySelector('footer');
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+      main?.setAttribute('inert', '');
+      footer?.setAttribute('inert', '');
+      window.addEventListener('keydown', closeOnEscape);
+      window.requestAnimationFrame(() => mobilePanelRef.current?.querySelector<HTMLAnchorElement>('a')?.focus());
+    } else {
+      document.body.style.overflow = '';
+      main?.removeAttribute('inert');
+      footer?.removeAttribute('inert');
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      main?.removeAttribute('inert');
+      footer?.removeAttribute('inert');
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [menuOpen]);
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+    window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+  };
+
+  return <header className="site-header">
+    <nav className="nav-wrap" aria-label="Main navigation">
+      <a href="#top" className="monogram brand-name" aria-label="Md. Minhajul Islam, home">Md. Minhajul Islam<span>.</span></a>
+      <div className="nav-links">
+        {navigation.slice(2, 7).map(([id, label]) => <a key={id} href={`#${id}`} className={activeSection === id ? 'active' : ''} aria-current={activeSection === id ? 'location' : undefined}>{label}</a>)}
+      </div>
+      <a className={`status-pill ${activeSection === 'contact' ? 'active' : ''}`} href="#contact"><span /> Available to collaborate</a>
+      <button ref={menuButtonRef} className="menu-toggle" type="button" aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</button>
+      <div className={`mobile-menu ${menuOpen ? 'open' : ''}`} id="mobile-navigation" aria-hidden={!menuOpen}>
+        <button type="button" className="menu-backdrop" aria-label="Close navigation menu" tabIndex={menuOpen ? 0 : -1} onClick={closeMenu} />
+        <dialog className="mobile-menu-panel" ref={mobilePanelRef} open={menuOpen} aria-label="Portfolio sections">
+          <p><span>Navigate</span><small>Portfolio sections</small></p>
+          <div>
+            {navigation.map(([id, label], index) => <a key={id} href={`#${id}`} tabIndex={menuOpen ? 0 : -1} className={activeSection === id ? 'active' : ''} aria-current={activeSection === id ? 'location' : undefined} onClick={closeMenu}><span>0{index + 1}</span>{label}<ArrowUpRight aria-hidden="true" /></a>)}
+          </div>
+        </dialog>
+      </div>
+    </nav>
+  </header>;
+}
 
 const projects = [
   { index: '01', title: 'PhantomFill', type: 'COMPUTER VISION RESEARCH', summary: 'Removes people from crowded photographs and reconstructs the hidden background. I built a multi-stage pipeline that detects each person, refines the mask, performs global inpainting, and locally restores difficult regions.', proof: 'YOLOv8x-seg → LaMa → Stable Diffusion 2, evaluated for visual quality and residual detections.', metrics: ['PyTorch', 'OpenCV', 'Diffusers'], href: 'https://github.com/MDMinhajul-Islam/CSE-498R-Directed-Research-', color: '#adff2f' },
@@ -77,7 +165,7 @@ function SkillMatrix() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (!visible) { setProgress(0); return; }
+    if (!visible) return;
     const started = performance.now();
     let raf = 0;
     const tick = (now: number) => { const next = Math.min(1, (now - started) / 4600); setProgress(next); if (next < 1) raf = requestAnimationFrame(tick); };
@@ -108,7 +196,7 @@ function ProjectDemo() {
     ['Glioma detected', '94.2%', 'class 01 / 04'], ['Meningioma detected', '91.7%', 'class 02 / 04'], ['Pituitary tumor', '96.1%', 'class 03 / 04'], ['No tumor detected', '93.8%', 'class 04 / 04'],
   ];
   const car = carQueries[round % carQueries.length], chat = chats[round % chats.length], tumor = tumors[round % tumors.length];
-  useEffect(() => { const timer = window.setInterval(() => setActive((value) => { const next = (value + 1) % labels.length; if (next === 0) setRound((r) => r + 1); return next; }), 5000); return () => window.clearInterval(timer); }, []);
+  useEffect(() => { const timer = window.setInterval(() => setActive((value) => { const next = (value + 1) % 6; if (next === 0) setRound((r) => r + 1); return next; }), 5000); return () => window.clearInterval(timer); }, []);
   return <div className="demo-stage" aria-label={`Project demonstration: ${labels[active]}`}>
     <div className="demo-browser"><div className="demo-browser-bar"><i /><i /><i /><span>minhajul.lab / live-demo</span><b>RUNNING</b></div>
       <div className={`demo-scene inpaint-scene ${active === 0 ? 'active' : ''}`}><div className="before-pane"><span>INPUT + MASK</span><div className="photo-person" /></div><div className="reconstruction-field"><div className="pixel-cloud">{Array.from({length: 42},(_,i)=><i key={i} style={{'--px':`${(i * 37) % 100}%`,'--py':`${(i * 61) % 100}%`,'--pd':`${(i % 12) * .08}s`} as React.CSSProperties}/>)}</div><span>LATENT RECONSTRUCTION</span></div><div className="after-pane"><span>RECONSTRUCTED</span><div className="paint-sweep" /><div className="rebuild-grid">{Array.from({length: 36},(_,i)=><i key={i} style={{'--pd':`${i * .035}s`} as React.CSSProperties}/>)}</div></div><div className="demo-result"><b>MASK FILLED</b><small>structure → texture → refinement</small></div></div>
@@ -165,7 +253,7 @@ function CareerTrack() {
 
 function ContactForm() {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault(); setState('sending');
     const form = event.currentTarget;
     try {
@@ -178,17 +266,15 @@ function ContactForm() {
 }
 
 export default function Home() {
-  return <main>
-    <nav className="nav-wrap" aria-label="Main navigation"><a href="#top" className="monogram brand-name" aria-label="Home">Md. Minhajul Islam<span>.</span></a><div className="nav-links"><a href="#work">Work</a><a href="#research">Research</a><a href="#career">Career</a><a href="#about">About</a></div><a className="status-pill" href="#contact"><span /> Available to collaborate</a></nav>
+  return <><SiteNavigation /><main>
     <section className="hero" id="top"><div className="hero-grid" aria-hidden="true" /><NeuralField /><div className="hero-copy"><p className="eyebrow"><span>01</span> AI ENGINEER · SOFTWARE BUILDER · RESEARCHER</p><h1>I build AI<br />that moves <em>beyond</em><br />the notebook.</h1><p className="hero-intro">I’m Md. Minhajul Islam — a CSE graduate and AI Engineer Intern at NEXVIX, turning computer vision, deep learning, and agentic ideas into tested software products.</p><div className="hero-actions"><a className="primary-action" href="#work">See engineering evidence <ArrowDown size={17} /></a><a className="text-action" href={links.github} target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub</a></div></div><ExpertisePulse /><div className="hero-side-note"><MousePointer2 size={14} /> MOVE TO BEND THE FIELD</div><div className="scroll-cue">SCROLL TO EXPLORE <span /></div></section>
     <section className="signal-strip" aria-label="Core capabilities"><div><BrainCircuit /><span>Machine Learning</span><b>MODELS THAT LEARN</b></div><div><Atom /><span>Deep Learning</span><b>VISION + GENERATION</b></div><div><Code2 /><span>Software Systems</span><b>BUILT TO OPERATE</b></div><div><Microscope /><span>Research</span><b>MEASURED, REPRODUCIBLE</b></div></section>
     <section className="skills-section" id="skills"><div className="skills-intro"><p className="eyebrow"><span>02</span> ENGINEERING TOOLKIT</p><h2>Code, models,<br />and <em>systems.</em></h2><p>Built through production-minded projects, research experiments, and end-to-end software. Each capability now assembles visibly from 0% when it enters view.</p></div><SkillMatrix /></section>
     <section className="work-section" id="work"><div className="section-head"><p className="eyebrow"><span>03</span> SELECTED WORK</p><h2>From problem<br />to <em>proof.</em></h2><p>Each project explains the real problem, the system I built, and the engineering evidence behind it.</p></div><div className="project-grid">{projects.map((project) => <TiltCard key={project.title} project={project} />)}</div><a className="all-work" href={links.github} target="_blank" rel="noreferrer">Explore the complete GitHub portfolio <ArrowUpRight size={18} /></a></section>
-    <section className="demo-section"><div className="demo-heading"><p className="eyebrow"><span>04</span> SYSTEMS IN MOTION</p><h2>See what the<br />projects <em>do.</em></h2><p>A rotating product-level view of the experiences and pipelines behind the repositories.</p></div><ProjectDemo /></section>
-    <section className="research-section" id="research"><ExperimentJourney /><div className="research-copy"><p className="eyebrow"><span>05</span> RESEARCH PRACTICE</p><h2>Curiosity,<br />made <em>measurable.</em></h2><p>I approach AI as an engineering discipline: understand the failure, research the evidence, build the smallest convincing system, validate it, and turn the result into something people can use.</p><div className="research-facts"><div><span>Current role</span><b>AI Engineer Intern</b><small>NEXVIX · Engineering in progress</small></div><div><span>Research internship</span><b>Completed</b><small>Image Segmentation & Object Removal</small></div><div><span>Education</span><b>CSE Graduate</b><small>North South University</small></div></div><div className="paper-list"><a href={links.scholar} target="_blank" rel="noreferrer"><span>01</span><p>A Machine Learning-Driven Framework for Enhancing Cognitive Function Using tDCS and Brain Gym Interventions</p><ArrowUpRight /></a><div><span>02</span><p>Machine Learning-Enhanced Cardiovascular Disease Risk Prediction: A Clinical Intelligence Framework</p><b>FORTHCOMING</b></div></div><a className="primary-action scholar" href={links.scholar} target="_blank" rel="noreferrer">Google Scholar <ArrowUpRight size={17} /></a></div></section>
-    <section className="career-section" id="career"><div className="career-heading"><p className="eyebrow"><span>06</span> CAREER SIGNAL</p><h2>A trajectory<br />built to <em>compound.</em></h2><p>Education became research. Research became engineering. The next step is building ambitious AI products with a team that values depth, ownership, and measurable impact.</p></div><CareerTrack /></section>
-    <section className="about-section" id="about"><div className="portrait-shell"><div className="portrait-glow" /><img src="/minhajul-professional-v2.png" alt="Md. Minhajul Islam in a navy suit" /><div className="portrait-tag">DHAKA, BANGLADESH <span>AI ENGINEER · CSE GRADUATE</span></div></div><div className="about-copy"><p className="eyebrow"><span>07</span> THE PERSON BEHIND THE PIPELINE</p><h2>I like hard problems<br />with <em>human stakes.</em></h2><p>I combine a researcher’s skepticism with an engineer’s urgency. Whether I’m reconstructing a missing scene, designing safer conversational AI, or shipping a real-time product, the goal is the same: rigorous systems that create clear value.</p><p>Scouting leadership shaped how I work — stay calm under constraints, communicate clearly, and move a team toward the objective. I am now growing that discipline at NEXVIX as an AI Engineer Intern.</p><div className="stack-row"><span>PYTHON</span><span>PYTORCH</span><span>C++</span><span>JAVASCRIPT</span><span>SQL</span><span>GIT</span></div></div></section>
+    <section className="demo-section" id="demos"><div className="demo-heading"><p className="eyebrow"><span>04</span> SYSTEMS IN MOTION</p><h2>See what the<br />projects <em>do.</em></h2><p>A rotating product-level view of the experiences and pipelines behind the repositories.</p></div><ProjectDemo /></section>
+    <section className="research-section" id="research"><ExperimentJourney /><div className="research-copy"><p className="eyebrow"><span>05</span> RESEARCH PRACTICE</p><h2>Curiosity,<br />made <em>measurable.</em></h2><p>I approach AI as an engineering discipline: understand the failure, research the evidence, build the smallest convincing system, validate it, and turn the result into something people can use.</p><div className="paper-list"><a href={links.scholar} target="_blank" rel="noreferrer"><span>01</span><p>A Machine Learning-Driven Framework for Enhancing Cognitive Function Using tDCS and Brain Gym Interventions</p><ArrowUpRight /></a><div><span>02</span><p>Machine Learning-Enhanced Cardiovascular Disease Risk Prediction: A Clinical Intelligence Framework</p><b>FORTHCOMING</b></div></div><a className="primary-action scholar" href={links.scholar} target="_blank" rel="noreferrer">Google Scholar <ArrowUpRight size={17} /></a></div></section>
+    <section className="career-section" id="career"><div className="career-heading"><p className="eyebrow"><span>06</span> CAREER SIGNAL</p><h2>A trajectory<br />built to <em>compound.</em></h2><p>Education became research. Research became engineering. The next step is building ambitious AI products with a team that values depth, ownership, and measurable impact.</p></div><div className="career-facts"><div><span>Current role</span><b>AI Engineer Intern</b><small>NEXVIX · Engineering in progress</small></div><div><span>Research internship</span><b>Completed</b><small>Image Segmentation & Object Removal</small></div><div><span>Education</span><b>CSE Graduate</b><small>North South University</small></div></div><CareerTrack /></section>
+    <section className="about-section" id="about"><div className="portrait-shell"><div className="portrait-glow" /><img src="/minhajul-professional-v2.png" alt="Md. Minhajul Islam in a navy suit" width="960" height="1200" /><div className="portrait-tag">DHAKA, BANGLADESH <span>AI ENGINEER · CSE GRADUATE</span></div></div><div className="about-copy"><p className="eyebrow"><span>07</span> THE PERSON BEHIND THE PIPELINE</p><h2>I like hard problems<br />with <em>human stakes.</em></h2><p>I combine a researcher’s skepticism with an engineer’s urgency. Whether I’m reconstructing a missing scene, designing safer conversational AI, or shipping a real-time product, the goal is the same: rigorous systems that create clear value.</p><p>Scouting leadership shaped how I work — stay calm under constraints, communicate clearly, and move a team toward the objective. I am now growing that discipline at NEXVIX as an AI Engineer Intern.</p><div className="stack-row"><span>PYTHON</span><span>PYTORCH</span><span>C++</span><span>JAVASCRIPT</span><span>SQL</span><span>GIT</span></div></div></section>
     <section className="contact-section" id="contact"><div><p className="eyebrow"><span>08</span> START A CONVERSATION</p><h2>Bring me the<br /><em>difficult</em> problem.</h2><p>Hiring for an AI or software role? Building a product that needs vision, agents, or dependable engineering? Send the context directly.</p><a className="contact-email" href={links.email}>Email me directly <ArrowUpRight size={18} /></a></div><ContactForm /></section>
-    <footer><p className="eyebrow"><span>09</span> LET’S BUILD SOMETHING USEFUL</p><h2>Have a difficult problem?<br /><a href={links.email}>Let’s talk.<ArrowUpRight /></a></h2><div className="footer-row"><span>© 2026 MD. MINHAJUL ISLAM</span><div><a href={links.github} target="_blank" rel="noreferrer"><GitFork /> GitHub</a><a href={links.linkedin} target="_blank" rel="noreferrer"><Contact /> LinkedIn</a><a href={links.scholar} target="_blank" rel="noreferrer"><Microscope /> Scholar</a><a href={links.email}><Mail /> Email</a></div></div></footer>
-  </main>;
+  </main><footer><p className="eyebrow"><span>09</span> LET’S BUILD SOMETHING USEFUL</p><h2>Have a difficult problem?<br /><a href={links.email}>Let’s talk.<ArrowUpRight /></a></h2><div className="footer-row"><span>© 2026 MD. MINHAJUL ISLAM</span><div><a href={links.github} target="_blank" rel="noreferrer"><GitFork /> GitHub</a><a href={links.linkedin} target="_blank" rel="noreferrer"><Contact /> LinkedIn</a><a href={links.scholar} target="_blank" rel="noreferrer"><Microscope /> Scholar</a><a href={links.email}><Mail /> Email</a></div></div></footer></>;
 }
