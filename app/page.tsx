@@ -3,6 +3,7 @@
 /* oxlint-disable next/no-img-element -- Static export keeps the portfolio portrait as a public asset. */
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Atom, BrainCircuit, Code2, Contact, GitFork, Mail, Menu, Microscope, MousePointer2, X } from 'lucide-react';
+import { InteractiveParticleNetwork } from '@/components/interactive-particle-network';
 
 const links = {
   github: 'https://github.com/MDMinhajul-Islam',
@@ -116,36 +117,6 @@ const skills = [
   ['Docker & Containers', 80], ['CI/CD Pipelines', 78],
 ] as const;
 
-function NeuralField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pointer = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    let raf = 0, width = 0, height = 0;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const points = Array.from({ length: 72 }, (_, i) => ({ a: (i / 72) * Math.PI * 2, ring: 0.28 + ((i * 19) % 67) / 100, lift: (((i * 37) % 100) - 50) / 50, speed: 0.1 + ((i * 13) % 20) / 100 }));
-    const resize = () => { const box = canvas.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, 2); width = box.width; height = box.height; canvas.width = width * dpr; canvas.height = height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
-    const draw = (now: number) => {
-      const t = reduce ? 1.2 : now / 1000;
-      ctx.clearRect(0, 0, width, height);
-      const cx = width * 0.52, cy = height * 0.5, scale = Math.min(width, height) * 0.39;
-      const projected = points.map((p) => { const theta = p.a + t * p.speed + pointer.current.x * 0.25; const phi = p.lift * 1.35 + Math.sin(t * 0.34 + p.a * 2) * 0.18 + pointer.current.y * 0.16; const x3 = Math.cos(theta) * Math.cos(phi) * p.ring; const y3 = Math.sin(phi) * p.ring; const z3 = Math.sin(theta) * Math.cos(phi) * p.ring; const perspective = 1 / (1.55 - z3 * 0.58); return { x: cx + x3 * scale * perspective * 1.6, y: cy + y3 * scale * perspective * 1.6, z: z3 }; });
-      ctx.lineWidth = 0.7;
-      for (let i = 0; i < projected.length; i++) for (let j = i + 1; j < projected.length; j++) { const a = projected[i], b = projected[j], dist = Math.hypot(a.x - b.x, a.y - b.y); if (dist < 75) { ctx.strokeStyle = `rgba(130,255,74,${(1 - dist / 75) * 0.18})`; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } }
-      projected.sort((a, b) => a.z - b.z).forEach((node, i) => { const r = 1.2 + (node.z + 1) * 1.5; const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 4); glow.addColorStop(0, i % 7 === 0 ? 'rgba(166,108,255,.95)' : 'rgba(176,255,72,.95)'); glow.addColorStop(1, 'rgba(125,255,75,0)'); ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(node.x, node.y, r * 4, 0, Math.PI * 2); ctx.fill(); });
-      ctx.strokeStyle = 'rgba(178,255,81,.42)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(cx, cy, scale * 0.72, scale * 0.22, t * 0.08, 0, Math.PI * 2); ctx.stroke(); raf = requestAnimationFrame(draw);
-    };
-    const move = (event: PointerEvent) => { const rect = canvas.getBoundingClientRect(); pointer.current = { x: (event.clientX - rect.left) / rect.width - 0.5, y: (event.clientY - rect.top) / rect.height - 0.5 }; };
-    resize(); window.addEventListener('resize', resize); canvas.addEventListener('pointermove', move); raf = requestAnimationFrame(draw);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); canvas.removeEventListener('pointermove', move); };
-  }, []);
-  return <canvas ref={canvasRef} className="neural-canvas" aria-label="Interactive animated three-dimensional neural field" />;
-}
-
 function TiltCard({ project }: { project: (typeof projects)[number] }) {
   const ref = useRef<HTMLAnchorElement>(null); const [style, setStyle] = useState({});
   return <a ref={ref} href={project.href} target="_blank" rel="noreferrer" className="project-card" style={{ ...style, '--project': project.color } as React.CSSProperties} onPointerMove={(event) => { if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; const rect = ref.current?.getBoundingClientRect(); if (!rect) return; const x = (event.clientX - rect.left) / rect.width - 0.5, y = (event.clientY - rect.top) / rect.height - 0.5; setStyle({ transform: `perspective(900px) rotateX(${-y * 5}deg) rotateY(${x * 7}deg) translateY(-4px)` }); }} onPointerLeave={() => setStyle({})}>
@@ -248,7 +219,87 @@ const career = [
 ] as const;
 
 function CareerTrack() {
-  return <div className="career-track">{career.map(([time, title, place, detail, status], index) => <article className={status === 'CURRENT' ? 'current' : ''} key={title}><div className="career-rail"><i /><span>{time}</span></div><div className="career-card"><div><small>{status}</small><b>0{index + 1}</b></div><h3>{title}</h3><h4>{place}</h4><p>{detail}</p></div></article>)}</div>;
+  const assemblyRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const assembly = assemblyRef.current;
+    const track = trackRef.current;
+    if (!assembly || !track) return;
+
+    const cards = Array.from(track.querySelectorAll<HTMLElement>('article'));
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (value: number) => Math.min(1, Math.max(0, value));
+    const power2InOut = (value: number) => value < 0.5
+      ? 2 * value * value
+      : 1 - Math.pow(-2 * value + 2, 2) / 2;
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const shouldAnimate = window.innerWidth > 900 && !motionQuery.matches;
+      assembly.classList.toggle('is-animated', shouldAnimate);
+
+      if (!shouldAnimate) {
+        track.style.setProperty('--career-progress', '1');
+        cards.forEach((card) => {
+          card.style.removeProperty('opacity');
+          card.style.removeProperty('transform');
+          card.style.setProperty('--card-progress', '1');
+        });
+        return;
+      }
+
+      const pin = assembly.querySelector<HTMLElement>('.career-pin');
+      if (!pin) return;
+
+      const bounds = assembly.getBoundingClientRect();
+      const stickyTop = Number.parseFloat(window.getComputedStyle(pin).top) || 0;
+      const scrollRange = Math.max(1, assembly.offsetHeight - pin.offsetHeight);
+      const progress = clamp((stickyTop - bounds.top) / scrollRange);
+      const movementProgress = clamp(progress / 0.82);
+      const radiusX = Math.min(440, track.clientWidth * 0.31);
+      const radiusY = Math.min(125, pin.clientHeight * 0.2);
+
+      track.style.setProperty('--career-progress', progress.toFixed(4));
+      cards.forEach((card, index) => {
+        const delay = index * 0.035;
+        const localProgress = clamp((movementProgress - delay) / (1 - delay));
+        const eased = power2InOut(localProgress);
+        const remaining = 1 - eased;
+        const angle = (index / cards.length) * Math.PI * 2 - Math.PI / 2;
+        const finalCenterX = card.offsetLeft + card.offsetWidth / 2;
+        const cloudCenterX = track.clientWidth / 2 + Math.cos(angle) * radiusX;
+        const x = cloudCenterX - finalCenterX;
+        const y = Math.sin(angle) * radiusY;
+        const z = -70 - (index % 3) * 55;
+        const rotateY = Math.cos(angle) * 12;
+        const rotateX = -Math.sin(angle) * 6;
+
+        card.style.setProperty('--card-progress', eased.toFixed(4));
+        card.style.opacity = (0.82 + eased * 0.18).toFixed(3);
+        card.style.transform = `translate3d(${(x * remaining).toFixed(2)}px, ${(y * remaining).toFixed(2)}px, ${(z * remaining).toFixed(2)}px) rotateX(${(rotateX * remaining).toFixed(2)}deg) rotateY(${(rotateY * remaining).toFixed(2)}deg)`;
+      });
+    };
+
+    const scheduleUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    motionQuery.addEventListener('change', scheduleUpdate);
+    update();
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      motionQuery.removeEventListener('change', scheduleUpdate);
+    };
+  }, []);
+
+  return <div className="career-assembly" ref={assemblyRef}><div className="career-pin"><div className="career-track" ref={trackRef}>{career.map(([time, title, place, detail, status], index) => <article className={status === 'CURRENT' ? 'current' : ''} key={title}><div className="career-rail"><i /><span>{time}</span></div><div className="career-card"><div><small>{status}</small><b>0{index + 1}</b></div><h3>{title}</h3><h4>{place}</h4><p>{detail}</p></div></article>)}</div></div></div>;
 }
 
 function ContactForm() {
@@ -267,7 +318,7 @@ function ContactForm() {
 
 export default function Home() {
   return <><SiteNavigation /><main>
-    <section className="hero" id="top"><div className="hero-grid" aria-hidden="true" /><NeuralField /><div className="hero-copy"><p className="eyebrow"><span>01</span> AI ENGINEER · SOFTWARE BUILDER · RESEARCHER</p><h1>I build AI<br />that moves <em>beyond</em><br />the notebook.</h1><p className="hero-intro">I’m Md. Minhajul Islam — a CSE graduate and AI Engineer Intern at NEXVIX, turning computer vision, deep learning, and agentic ideas into tested software products.</p><div className="hero-actions"><a className="primary-action" href="#work">See engineering evidence <ArrowDown size={17} /></a><a className="text-action" href={links.github} target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub</a></div></div><ExpertisePulse /><div className="hero-side-note"><MousePointer2 size={14} /> MOVE TO BEND THE FIELD</div><div className="scroll-cue">SCROLL TO EXPLORE <span /></div></section>
+    <section className="hero" id="top"><div className="hero-grid" aria-hidden="true" /><InteractiveParticleNetwork /><div className="hero-copy"><p className="eyebrow"><span>01</span> AI ENGINEER · SOFTWARE BUILDER · RESEARCHER</p><h1>I build AI<br />that moves <em>beyond</em><br />the notebook.</h1><p className="hero-intro">I’m Md. Minhajul Islam — a CSE graduate and AI Engineer Intern at NEXVIX, turning computer vision, deep learning, and agentic ideas into tested software products.</p><div className="hero-actions"><a className="primary-action" href="#work">See engineering evidence <ArrowDown size={17} /></a><a className="text-action" href={links.github} target="_blank" rel="noreferrer"><GitFork size={18} /> GitHub</a></div></div><ExpertisePulse /><div className="hero-side-note"><MousePointer2 size={14} /> MOVE TO WEAVE THE NETWORK</div><div className="scroll-cue">SCROLL TO EXPLORE <span /></div></section>
     <section className="signal-strip" aria-label="Core capabilities"><div><BrainCircuit /><span>Machine Learning</span><b>MODELS THAT LEARN</b></div><div><Atom /><span>Deep Learning</span><b>VISION + GENERATION</b></div><div><Code2 /><span>Software Systems</span><b>BUILT TO OPERATE</b></div><div><Microscope /><span>Research</span><b>MEASURED, REPRODUCIBLE</b></div></section>
     <section className="skills-section" id="skills"><div className="skills-intro"><p className="eyebrow"><span>02</span> ENGINEERING TOOLKIT</p><h2>Code, models,<br />and <em>systems.</em></h2><p>Built through production-minded projects, research experiments, and end-to-end software. Each capability now assembles visibly from 0% when it enters view.</p></div><SkillMatrix /></section>
     <section className="work-section" id="work"><div className="section-head"><p className="eyebrow"><span>03</span> SELECTED WORK</p><h2>From problem<br />to <em>proof.</em></h2><p>Each project explains the real problem, the system I built, and the engineering evidence behind it.</p></div><div className="project-grid">{projects.map((project) => <TiltCard key={project.title} project={project} />)}</div><a className="all-work" href={links.github} target="_blank" rel="noreferrer">Explore the complete GitHub portfolio <ArrowUpRight size={18} /></a></section>
