@@ -353,13 +353,16 @@ function CareerTrack() {
       const stickyTop = Number.parseFloat(window.getComputedStyle(pin).top) || 0;
       const scrollRange = Math.max(1, assembly.offsetHeight - pin.offsetHeight);
       const progress = clamp((stickyTop - bounds.top) / scrollRange);
-      const movementProgress = clamp(progress / 0.82);
+      const entryHoldEnd = 0.1;
+      const assemblyEnd = 0.68;
+      const movementProgress = clamp((progress - entryHoldEnd) / (assemblyEnd - entryHoldEnd));
       const radiusX = Math.min(440, track.clientWidth * 0.31);
       const radiusY = Math.min(125, pin.clientHeight * 0.2);
 
       track.style.setProperty('--career-progress', progress.toFixed(4));
+      assembly.dataset.phase = progress < entryHoldEnd ? 'waiting' : progress < assemblyEnd ? 'assembling' : 'settled';
       cards.forEach((card, index) => {
-        const delay = index * 0.035;
+        const delay = index * 0.05;
         const localProgress = clamp((movementProgress - delay) / (1 - delay));
         const eased = power2InOut(localProgress);
         const remaining = 1 - eased;
