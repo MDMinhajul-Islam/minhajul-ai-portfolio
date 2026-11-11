@@ -1,9 +1,10 @@
-import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
+import { Caveat, Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 
 const geist = Geist({ variable: '--font-geist', subsets: ['latin'] });
 const mono = Geist_Mono({ variable: '--font-mono', subsets: ['latin'] });
 const serif = Instrument_Serif({ variable: '--font-serif', subsets: ['latin'], weight: '400' });
+const hand = Caveat({ variable: '--font-hand', subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 const siteUrl = 'https://md-minhajul-portfolio.netlify.app/';
 const previewImageUrl = `${siteUrl}og-image.png`;
@@ -34,7 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="twitter:description" content="AI Engineer and researcher working across machine learning, computer vision, deep learning, and production AI systems." />
         <meta name="twitter:image" content={previewImageUrl} />
       </head>
-      <body className={`${geist.variable} ${mono.variable} ${serif.variable}`}>{children}</body>
+      <body className={`${geist.variable} ${mono.variable} ${serif.variable} ${hand.variable}`}>{children}</body>
     </html>
   );
 }

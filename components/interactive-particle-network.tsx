@@ -23,12 +23,12 @@ type Particle = {
 
 type Rgb = { r: number; g: number; b: number };
 
-const FALLBACK_LIME: Rgb = { r: 183, g: 255, b: 74 };
-const FALLBACK_VIOLET: Rgb = { r: 154, g: 107, b: 255 };
-const NEON_GREEN: Rgb = { r: 173, g: 255, b: 47 };
-const ELECTRIC_LIME: Rgb = { r: 124, g: 255, b: 0 };
-const ELECTRIC_PURPLE: Rgb = { r: 168, g: 85, b: 247 };
-const SOFT_VIOLET: Rgb = { r: 183, g: 148, b: 246 };
+const FALLBACK_LIME: Rgb = { r: 49, g: 78, b: 107 };
+const FALLBACK_VIOLET: Rgb = { r: 180, g: 76, b: 65 };
+const NEON_GREEN: Rgb = { r: 44, g: 71, b: 98 };
+const ELECTRIC_LIME: Rgb = { r: 77, g: 111, b: 139 };
+const ELECTRIC_PURPLE: Rgb = { r: 174, g: 70, b: 60 };
+const SOFT_VIOLET: Rgb = { r: 211, g: 128, b: 105 };
 
 function parseHexColor(value: string, fallback: Rgb): Rgb {
   const hex = value.trim().replace('#', '');
@@ -247,7 +247,7 @@ export function InteractiveParticleNetwork() {
         else grid.set(key, [index]);
       });
 
-      context.lineWidth = 0.82;
+      context.lineWidth = 1.55;
       particles.forEach((particle, index) => {
         const cellX = Math.floor(particle.x / cellSize);
         const cellY = Math.floor(particle.y / cellSize);
@@ -261,7 +261,7 @@ export function InteractiveParticleNetwork() {
               const distance = Math.hypot(particle.x - other.x, particle.y - other.y);
               if (distance >= connectionDistance) continue;
               const proximity = 1 - distance / connectionDistance;
-              const alpha = (proximity * 0.32 + proximity * proximity * 0.35) * Math.min(particle.depth, other.depth);
+              const alpha = Math.min(0.92, 0.24 + (proximity * 0.58 + proximity * proximity * 0.5) * Math.min(particle.depth, other.depth));
               context.strokeStyle = rgba(particle.family === 'purple' || other.family === 'purple' ? violet : lime, alpha);
               context.beginPath();
               context.moveTo(particle.x, particle.y);
@@ -281,10 +281,10 @@ export function InteractiveParticleNetwork() {
           .sort((a, b) => a.distance - b.distance)
           .slice(0, 7);
 
-        context.lineWidth = 0.8;
+        context.lineWidth = 1.5;
         for (const { particle, distance } of cursorConnections) {
           const proximity = 1 - distance / interactionRadius;
-          context.strokeStyle = rgba(particle.family === 'purple' ? violet : lime, (proximity * 0.34 + proximity * proximity * 0.25) * pointer.strength);
+          context.strokeStyle = rgba(particle.family === 'purple' ? violet : lime, Math.min(0.95, (0.28 + proximity * 0.66 + proximity * proximity * 0.4) * pointer.strength));
           context.beginPath();
           context.moveTo(pointer.x, pointer.y);
           context.lineTo(particle.x, particle.y);
@@ -292,7 +292,7 @@ export function InteractiveParticleNetwork() {
         }
       }
 
-      context.globalCompositeOperation = 'lighter';
+      context.globalCompositeOperation = 'source-over';
       for (const particle of particles) {
         const breathWave = reducedMotion ? 0 : Math.sin(time * particle.breatheSpeed + particle.phase);
         const radiusPulse = 1 + breathWave * 0.055;
@@ -305,7 +305,7 @@ export function InteractiveParticleNetwork() {
         context.globalAlpha = Math.min(1, brightnessPulse);
         context.fillStyle = rgba(particle.color, 0.98);
         context.beginPath();
-        context.arc(particle.x, particle.y, Math.max(1, coreRadius), 0, Math.PI * 2);
+        context.arc(particle.x, particle.y, Math.max(1.45, coreRadius), 0, Math.PI * 2);
         context.fill();
         context.fillStyle = 'rgba(247,255,240,.68)';
         context.beginPath();

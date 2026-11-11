@@ -27,7 +27,7 @@ function SiteNavigation() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('top');
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const mobilePanelRef = useRef<HTMLDialogElement>(null);
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const sections = navigation
@@ -49,33 +49,87 @@ function SiteNavigation() {
   useEffect(() => {
     const main = document.querySelector('main');
     const footer = document.querySelector('footer');
+    const root = document.documentElement;
+    const lockedScrollY = window.scrollY;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMenuOpen(false);
     };
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (menuButtonRef.current?.contains(target)) return;
+      if (target instanceof Element && target.closest('.mobile-menu-panel a')) return;
+      setMenuOpen(false);
+    };
+    const closeOnScrollGesture = () => setMenuOpen(false);
+    const closeIfPageMoved = () => {
+      if (Math.abs(window.scrollY - lockedScrollY) > 1) setMenuOpen(false);
+    };
 
     if (menuOpen) {
+      root.style.overflow = 'hidden';
+      root.style.overscrollBehavior = 'none';
       document.body.style.overflow = 'hidden';
+      document.body.style.overscrollBehavior = 'none';
       main?.setAttribute('inert', '');
       footer?.setAttribute('inert', '');
       window.addEventListener('keydown', closeOnEscape);
+      document.addEventListener('pointerdown', closeOnOutsidePointer, true);
+      window.addEventListener('wheel', closeOnScrollGesture, { capture: true, passive: true });
+      window.addEventListener('touchmove', closeOnScrollGesture, { capture: true, passive: true });
+      window.addEventListener('scroll', closeIfPageMoved, { capture: true, passive: true });
       window.requestAnimationFrame(() => mobilePanelRef.current?.querySelector<HTMLAnchorElement>('a')?.focus());
     } else {
+      root.style.overflow = '';
+      root.style.overscrollBehavior = '';
       document.body.style.overflow = '';
+      document.body.style.overscrollBehavior = '';
       main?.removeAttribute('inert');
       footer?.removeAttribute('inert');
     }
 
     return () => {
+      root.style.overflow = '';
+      root.style.overscrollBehavior = '';
       document.body.style.overflow = '';
+      document.body.style.overscrollBehavior = '';
       main?.removeAttribute('inert');
       footer?.removeAttribute('inert');
       window.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
+      window.removeEventListener('wheel', closeOnScrollGesture, true);
+      window.removeEventListener('touchmove', closeOnScrollGesture, true);
+      window.removeEventListener('scroll', closeIfPageMoved, true);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    const closeAfterNavigation = () => setMenuOpen(false);
+    const closeOnDesktop = () => {
+      if (window.innerWidth > 900) setMenuOpen(false);
+    };
+    window.addEventListener('hashchange', closeAfterNavigation);
+    window.addEventListener('resize', closeOnDesktop);
+    return () => {
+      window.removeEventListener('hashchange', closeAfterNavigation);
+      window.removeEventListener('resize', closeOnDesktop);
+    };
+  }, []);
 
   const closeMenu = () => {
     setMenuOpen(false);
     window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+  };
+
+  const navigateFromMenu = (event: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    event.preventDefault();
+    setMenuOpen(false);
+    setActiveSection(id);
+    document.body.style.overflow = '';
+    document.querySelector('main')?.removeAttribute('inert');
+    document.querySelector('footer')?.removeAttribute('inert');
+    window.history.pushState(null, '', `#${id}`);
+    window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
 
   return <header className="site-header">
@@ -87,12 +141,12 @@ function SiteNavigation() {
       <button ref={menuButtonRef} className="menu-toggle" type="button" aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</button>
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`} id="mobile-navigation" aria-hidden={!menuOpen}>
         <button type="button" className="menu-backdrop" aria-label="Close navigation menu" tabIndex={menuOpen ? 0 : -1} onClick={closeMenu} />
-        <dialog className="mobile-menu-panel" ref={mobilePanelRef} open={menuOpen} aria-label="Portfolio sections">
+        <div className="mobile-menu-panel" ref={mobilePanelRef} role="dialog" aria-modal="true" aria-label="Portfolio sections">
           <p><span>Navigate</span><small>Portfolio sections</small></p>
           <div>
-            {navigation.map(([id, label], index) => <a key={id} href={`#${id}`} tabIndex={menuOpen ? 0 : -1} className={activeSection === id ? 'active' : ''} aria-current={activeSection === id ? 'location' : undefined} onClick={closeMenu}><span>0{index + 1}</span>{label}<ArrowUpRight aria-hidden="true" /></a>)}
+            {navigation.map(([id, label], index) => <a key={id} href={`#${id}`} tabIndex={menuOpen ? 0 : -1} className={activeSection === id ? 'active' : ''} aria-current={activeSection === id ? 'location' : undefined} onClick={(event) => navigateFromMenu(event, id)}><span>0{index + 1}</span>{label}<ArrowUpRight aria-hidden="true" /></a>)}
           </div>
-        </dialog>
+        </div>
       </div>
     </nav>
   </header>;
@@ -169,7 +223,7 @@ function ProjectDemo() {
   useEffect(() => { const timer = window.setInterval(() => setActive((value) => { const next = (value + 1) % 6; if (next === 0) setRound((r) => r + 1); return next; }), 5000); return () => window.clearInterval(timer); }, []);
   return <div className="demo-stage" aria-label={`Project demonstration: ${labels[active]}`}>
     <div className="demo-browser"><div className="demo-browser-bar"><i /><i /><i /><span>minhajul.lab / live-demo</span><b>RUNNING</b></div>
-      <div className={`demo-scene inpaint-scene ${active === 0 ? 'active' : ''}`}><div className="before-pane"><span>INPUT + MASK</span><div className="photo-person" /></div><div className="reconstruction-field"><div className="pixel-cloud">{Array.from({length: 42},(_,i)=><i key={i} style={{'--px':`${(i * 37) % 100}%`,'--py':`${(i * 61) % 100}%`,'--pd':`${(i % 12) * .08}s`} as React.CSSProperties}/>)}</div><span>LATENT RECONSTRUCTION</span></div><div className="after-pane"><span>RECONSTRUCTED</span><div className="paint-sweep" /><div className="rebuild-grid">{Array.from({length: 36},(_,i)=><i key={i} style={{'--pd':`${i * .035}s`} as React.CSSProperties}/>)}</div></div><div className="demo-result"><b>MASK FILLED</b><small>structure → texture → refinement</small></div></div>
+      <div className={`demo-scene inpaint-scene ${active === 0 ? 'active' : ''}`}><div className="before-pane"><span>REAL INPUT + MASK</span><div className="subject-mask"><small>MASK 01</small></div></div><div className="reconstruction-field"><div className="pixel-cloud">{Array.from({length: 42},(_,i)=><i key={i} style={{'--px':`${(i * 37) % 100}%`,'--py':`${(i * 61) % 100}%`,'--pd':`${(i % 12) * .08}s`} as React.CSSProperties}/>)}</div><span>PIXEL RECONSTRUCTION</span></div><div className="after-pane"><span>RECONSTRUCTION</span><div className="paint-sweep" /><div className="rebuild-grid">{Array.from({length: 36},(_,i)=><i key={i} style={{'--pd':`${i * .055}s`} as React.CSSProperties}/>)}</div></div><div className="demo-result"><b>SCENE REBUILT</b><small>pixels → structure → texture</small></div></div>
       <div className={`demo-scene agent-scene ${active === 1 ? 'active' : ''}`}><div className="agent-query">{car.q}<small>{car.lead}</small></div><div className="agent-flow"><span>INTENT</span><i /><span>TOOL PLAN</span><i /><span>LIVE INVENTORY</span><i /><span>RANKED MATCHES</span></div><div className="vehicle-results">{car.cars.map(([name, meta], i)=><div key={name}><span>0{i + 1}</span><b>{name}</b><small>{meta}</small><em>{i === 0 ? 'Best overall fit' : 'Strong alternative'}</em></div>)}</div><div className="agent-outcome"><span>CRM lead created</span><span>Test-drive slots ready</span><span>Conversation logged</span></div></div>
       <div className={`demo-scene call-scene ${active === 2 ? 'active' : ''}`}><div className="caller"><i>AI</i><div><b>Avery · Voice Agent</b><span>Connected · 01:24</span></div></div><div className="waveform">{Array.from({length: 28},(_,i)=><i key={i} style={{'--h':`${18 + (i * 31) % 62}%`} as React.CSSProperties}/>)}</div><p>“I found two SUVs within your budget. Would you like to book a test drive?”</p><div className="call-tools"><span>inventory.search ✓</span><span>calendar.slots ✓</span></div></div>
       <div className={`demo-scene chat-scene ${active === 3 ? 'active' : ''}`}><div className="chat-head"><i>CW</i><div><b>Chat-Wave · Engineering</b><span>4 members online · live Socket.io room</span></div><strong>● LIVE</strong></div><div className="chat-video-strip"><span><i>MI</i><small>Minhajul</small></span><span><i>AK</i><small>Ayesha</small></span><span><i>RN</i><small>Rayan</small></span><b>◉ 00:{24 + round}</b></div><div className="messages"><p className="incoming">{chat[0]}</p><p className="outgoing">{chat[1]}</p><p className="incoming delivered">{chat[2]} <small>delivered · now</small></p><p className="incoming typing"><i/><i/><i/></p></div><div className="message-box">Write a message… <b>↗</b></div></div>
@@ -195,17 +249,60 @@ function ExpertisePulse() {
 }
 
 const journeys = [
-  { name: 'VISION SYSTEM', outcome: 'DEPLOYED INPAINTING DEMO', stages: [['Understand', 'Locate the visual failure'], ['Research', 'Compare models + evidence'], ['Categorize', 'Masks, scenes, edge cases'], ['Prototype', 'Build the hybrid pipeline'], ['Validate', 'Quality, speed, residuals'], ['Ship', 'Interactive final product']] },
-  { name: 'AI AGENT', outcome: 'MONITORED TOOL-USING API', stages: [['Understand', 'Map the user intent'], ['Research', 'Select models + tools'], ['Categorize', 'Actions, data, constraints'], ['Prototype', 'Orchestrate the workflow'], ['Validate', 'Test failures + guardrails'], ['Ship', 'Observe and iterate']] },
-  { name: 'SOFTWARE PRODUCT', outcome: 'RELIABLE REAL-TIME EXPERIENCE', stages: [['Understand', 'Study the user workflow'], ['Research', 'Choose the architecture'], ['Categorize', 'Services, states, events'], ['Prototype', 'Build the vertical slice'], ['Validate', 'QA, latency, resilience'], ['Ship', 'Deploy measurable value']] },
+  {
+    short: 'Inpainting', name: 'PHANTOMFILL · COMPUTER VISION',
+    brief: 'Remove a person while preserving the geometry, texture, and visual logic of the original scene.',
+    tools: ['YOLOv8x-seg', 'LaMa', 'Stable Diffusion 2'], outcome: 'CLEAN SCENE · RESIDUALS CHECKED',
+    stages: [['Detect subjects', 'Segment every person in the frame'], ['Refine the mask', 'Cover edges, shadows, and missed pixels'], ['Rebuild structure', 'Use LaMa for the global scene fill'], ['Repair hard regions', 'Apply diffusion only where detail breaks'], ['Audit the result', 'Check seams and residual detections']],
+  },
+  {
+    short: 'Dealership', name: 'NEXDRIVE · AI SALES SYSTEM',
+    brief: 'Turn a natural-language vehicle request into ranked inventory matches and a traceable sales action.',
+    tools: ['FastAPI', 'Supabase', 'Tool calling'], outcome: 'MATCHES RANKED · LEAD CAPTURED',
+    stages: [['Parse the request', 'Extract budget, body type, and priorities'], ['Query live inventory', 'Filter only available matching vehicles'], ['Rank the options', 'Score fit and explain each trade-off'], ['Create the lead', 'Save customer intent and selected matches'], ['Prepare the visit', 'Return available test-drive slots']],
+  },
+  {
+    short: 'Voice agent', name: 'NORTHSTAR · VOICE AGENT',
+    brief: 'Keep a real-time sales conversation grounded in inventory and booking tools instead of model guesses.',
+    tools: ['Grok Voice', 'REST tools', 'Cal.com'], outcome: 'GROUNDED REPLY · BOOKING READY',
+    stages: [['Listen in real time', 'Stream speech and detect the request'], ['Resolve intent', 'Separate product questions from actions'], ['Call protected tools', 'Search inventory without exposing credentials'], ['Speak the answer', 'Return a concise, grounded response'], ['Log or hand off', 'Record the call and preserve next steps']],
+  },
+  {
+    short: 'Chat-Wave', name: 'CHAT-WAVE · REAL-TIME SYSTEM',
+    brief: 'Deliver messages instantly while keeping identity, room state, and delivery feedback synchronized.',
+    tools: ['Express', 'Socket.io', 'JWT'], outcome: 'EVENTS SYNCED · ROOM RECOVERABLE',
+    stages: [['Authenticate the user', 'Verify identity before opening a session'], ['Join the room', 'Bind the socket to the correct channel'], ['Broadcast the event', 'Fan the message out to active members'], ['Confirm delivery', 'Sync timestamps and receipt state'], ['Recover connection', 'Rejoin cleanly after a network drop']],
+  },
+  {
+    short: 'MRI classifier', name: 'MRI · MEDICAL IMAGING MODEL',
+    brief: 'Transform an axial MRI scan into a four-class prediction with visible confidence and reproducible evaluation.',
+    tools: ['CNN', 'Figshare MRI', 'Jupyter'], outcome: 'CLASS PREDICTED · CONFIDENCE SHOWN',
+    stages: [['Prepare the scan', 'Resize, normalize, and verify the input'], ['Extract features', 'Run convolution blocks across the image'], ['Predict the class', 'Compare four tumor-category probabilities'], ['Inspect confidence', 'Surface the score without hiding uncertainty'], ['Evaluate the model', 'Review confusion matrix and failure cases']],
+  },
+  {
+    short: 'MindCare', name: 'MINDCARE · RESPONSIBLE AI',
+    brief: 'Guide a structured PHQ-9 conversation while keeping scoring deterministic and crisis language visible.',
+    tools: ['Local LLaMA 3', 'PHQ-9 logic', 'MongoDB'], outcome: 'ASSESSMENT SCORED · SAFETY CHECKED',
+    stages: [['Ask one question', 'Present the next PHQ-9 prompt clearly'], ['Record the response', 'Map the answer to a fixed score'], ['Check safety language', 'Flag crisis terms outside model judgment'], ['Calculate severity', 'Use deterministic scoring rules'], ['Prepare the report', 'Summarize results and supportive guidance']],
+  },
 ] as const;
 
 function ExperimentJourney() {
   const [scenario, setScenario] = useState(0);
   const [active, setActive] = useState(0);
-  useEffect(() => { const timer = window.setInterval(() => setActive((value) => { if (value === 5) { setScenario((s) => (s + 1) % journeys.length); return 0; } return value + 1; }), 1350); return () => window.clearInterval(timer); }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => setActive((value) => value === journeys[scenario].stages.length - 1 ? 0 : value + 1), 1550);
+    return () => window.clearInterval(timer);
+  }, [scenario]);
   const journey = journeys[scenario];
-  return <section className="journey-shell" id="experiment"><div className="journey-head"><span>LIVE EXPERIMENT SYSTEM</span><b>{journey.name}</b></div><div className="journey-track">{journey.stages.map(([title, detail], index) => <div className={`journey-node ${index < active ? 'done' : ''} ${index === active ? 'active' : ''}`} key={title}><i>0{index + 1}</i><div><b>{title}</b><small>{detail}</small></div><em>{index < active ? '✓' : index === active ? 'RUNNING' : 'QUEUED'}</em></div>)}</div><div className="journey-output"><span>OUTCOME</span><b>{journey.outcome}</b><i /></div></section>;
+  const selectJourney = (index: number) => { setScenario(index); setActive(0); };
+  return <section className="journey-shell" id="experiment">
+    <div className="journey-head"><span>PROJECT PIPELINE</span><b>CONCEPT {String(scenario + 1).padStart(2, '0')} / {String(journeys.length).padStart(2, '0')}</b></div>
+    <div className="journey-tabs" aria-label="Choose a project pipeline">{journeys.map((item, index) => <button className={scenario === index ? 'active' : ''} onClick={() => selectJourney(index)} key={item.short}><span>0{index + 1}</span>{item.short}</button>)}</div>
+    <div className="journey-context" key={journey.name}><span>{journey.name}</span><p>{journey.brief}</p><div>{journey.tools.map((tool) => <b key={tool}>{tool}</b>)}</div></div>
+    <div className="journey-track">{journey.stages.map(([title, detail], index) => <div className={`journey-node ${index < active ? 'done' : ''} ${index === active ? 'active' : ''}`} key={`${journey.short}-${title}`}><i>0{index + 1}</i><div><b>{title}</b><small>{detail}</small></div><em>{index < active ? 'DONE' : index === active ? 'NOW' : 'NEXT'}</em></div>)}</div>
+    <div className="journey-output"><span>ENGINEERING RESULT</span><b>{journey.outcome}</b><i key={journey.name} /></div>
+  </section>;
 }
 
 const career = [
@@ -326,5 +423,5 @@ export default function Home() {
     <section className="career-section" id="career"><div className="career-heading"><p className="eyebrow"><span>06</span> CAREER SIGNAL</p><h2>A trajectory<br />built to <em>compound.</em></h2><p>Education became research. Research became engineering. Industry experience now feeds back into rigorous academic research focused on evidence, reproducibility, and useful AI systems.</p></div><div className="career-facts"><div><span>Current role</span><b>Research Assistant</b><small>North South University · AI research in progress</small></div><div><span>Industry internship</span><b>Completed</b><small>AI Engineering · NEXVIX</small></div><div><span>Education</span><b>CSE Graduate</b><small>North South University</small></div></div><CareerTrack /></section>
     <section className="about-section" id="about"><div className="portrait-shell"><div className="portrait-glow" /><img src="/minhajul-professional-v2.png" alt="Md. Minhajul Islam in a navy suit" width="960" height="1200" /><div className="portrait-tag">DHAKA, BANGLADESH <span>RESEARCH ASSISTANT · CSE GRADUATE</span></div></div><div className="about-copy"><p className="eyebrow"><span>07</span> THE PERSON BEHIND THE PIPELINE</p><h2>I like hard problems<br />with <em>human stakes.</em></h2><p>I combine a researcher’s skepticism with an engineer’s urgency. Whether I’m reconstructing a missing scene, designing safer conversational AI, or shipping a real-time product, the goal is the same: rigorous systems that create clear value.</p><p>Scouting leadership shaped how I work — stay calm under constraints, communicate clearly, and move a team toward the objective. I now bring that discipline to my work as a Research Assistant at North South University, building rigorous and reproducible AI research.</p><div className="stack-row"><span>PYTHON</span><span>PYTORCH</span><span>C++</span><span>JAVASCRIPT</span><span>SQL</span><span>GIT</span></div></div></section>
     <section className="contact-section" id="contact"><div><p className="eyebrow"><span>08</span> START A CONVERSATION</p><h2>Bring me the<br /><em>difficult</em> problem.</h2><p>Hiring for an AI or software role? Building a product that needs vision, agents, or dependable engineering? Send the context directly.</p><a className="contact-email" href={links.email}>Email me directly <ArrowUpRight size={18} /></a></div><ContactForm /></section>
-  </main><footer><p className="eyebrow"><span>09</span> LET’S BUILD SOMETHING USEFUL</p><h2>Have a difficult problem?<br /><a href={links.email}>Let’s talk.<ArrowUpRight /></a></h2><div className="footer-row"><span>© 2026 MD. MINHAJUL ISLAM</span><div><a href={links.github} target="_blank" rel="noreferrer"><GitFork /> GitHub</a><a href={links.linkedin} target="_blank" rel="noreferrer"><Contact /> LinkedIn</a><a href={links.scholar} target="_blank" rel="noreferrer"><Microscope /> Scholar</a><a href={links.email}><Mail /> Email</a></div></div></footer></>;
+  </main><footer><p className="eyebrow"><span>09</span> LET’S BUILD SOMETHING USEFUL</p><h2>Have a difficult problem?<br /><a href={links.email}>Let’s talk.<ArrowUpRight /></a></h2><div className="footer-row"><span>© MD. MINHAJUL ISLAM</span><div><a href={links.github} target="_blank" rel="noreferrer"><GitFork /> GitHub</a><a href={links.linkedin} target="_blank" rel="noreferrer"><Contact /> LinkedIn</a><a href={links.scholar} target="_blank" rel="noreferrer"><Microscope /> Scholar</a><a href={links.email}><Mail /> Email</a></div></div></footer></>;
 }
